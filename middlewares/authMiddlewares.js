@@ -1,29 +1,20 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
-// Middleware to verify JWT token
 module.exports.verifyToken = (req, res, next) => {
-  const token = req.cookies.token;
+  const token = req.cookies.token; // Get token from cookies
 
   if (!token) {
-    return res.redirect('/auth/login');
+    return res.redirect("/auth/login"); // Redirect to login if no token
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach user info to the request object
+    req.user = decoded; // Attach user info to req
+    res.locals.role = decoded.role; // Attach role to res.locals for views
     next();
   } catch (error) {
-    console.error(error);
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    console.error("Invalid token:", error);
+    res.clearCookie("token"); // Clear the invalid token
+    res.redirect("/auth/login");
   }
-};
-
-// Middleware to enforce role-based access
-module.exports.requireRole = (role) => {
-  return (req, res, next) => {
-    if (req.user.role !== role) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    next();
-  };
 };

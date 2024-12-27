@@ -8,7 +8,7 @@ const {
 const { verifyToken, requireRole } = require("../middlewares/authMiddlewares");
 
 router.use(verifyToken);
-router.use(requireRole("admin"));
+// router.use(requireRole("admin"));
 
 router.get("/", getCategories);
 router.post("/", createCategory);

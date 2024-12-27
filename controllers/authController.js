@@ -13,7 +13,7 @@ const generateToken = (user) => {
 
 module.exports.registerUser = async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    const { username, email, password, role } = req.body;
 
     // Check if the user already exists
     const existingUser = await User.findOne({ username });
@@ -26,8 +26,9 @@ module.exports.registerUser = async (req, res) => {
 
     const newUser = new User({
       username,
+      email,
       password: hashedPassword,
-      role: role || "user", // Set default role as 'user' if not provided
+      role: role || "user", // Default role is 'user'
     });
 
     await newUser.save();
@@ -39,39 +40,39 @@ module.exports.registerUser = async (req, res) => {
 };
 
 module.exports.loginUser = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    // Find the user by username
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    try {
+      const { username, password } = req.body;
+  
+      // Find the user by username
+      const user = await User.findOne({ username });
+      if (!user) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+  
+      // Compare the entered password with the hashed password in the database
+      const isPasswordCorrect = await bcrypt.compare(password, user.password);
+      if (!isPasswordCorrect) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+  
+      // Generate a JWT token
+      const token = jwt.sign(
+        { userId: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" } // Token expiry
+      );
+  
+      // Send the token as a cookie
+      res.cookie("token", token, { httpOnly: true });
+  
+      // Redirect the user to the tasks page
+      res.redirect("/tasks"); // Redirect to tasks page or dashboard
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
     }
-
-    // Compare the entered password with the hashed password in the database
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // Generate a JWT token
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" } // Token expiry
-    );
-
-    // Send the token as a cookie
-    res.cookie("token", token, { httpOnly: true });
-
-    // Redirect the user to the tasks page after login
-    res.redirect("/tasks"); // Or your dashboard page
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
+  };
+  
 // User logout
 module.exports.logoutUser = (req, res) => {
   res.clearCookie("token");

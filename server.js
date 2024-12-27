@@ -20,7 +20,7 @@ app.use(express.static(path.join(__dirname + "/assets")));
 app.use("/", require("./routers"));
 
 app.get('/', (req, res) => {
-    res.redirect('/auth/login');
+    res.redirect('/auth/register');
   });
 app.listen(port, (err) => {
     if (!err) {
